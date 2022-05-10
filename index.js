@@ -3,6 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const profileRoutes = require("./routes/profile");
+const searchRoutes = require("./routes/search");
 const cors = require("cors");
 
 const app = express();
@@ -17,6 +18,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/profile", profileRoutes);
+app.use("/search", searchRoutes);
 app.listen(8080, () => {
   console.log("Listening on port 8080");
 });
