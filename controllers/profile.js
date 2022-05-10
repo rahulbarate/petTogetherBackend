@@ -2,7 +2,11 @@ const db = require("../firebase");
 
 exports.getUserProfile = async (req, res, next) => {
   try {
-    const email = req.body.email;
+    let email = req.body.email;
+    if (!email) {
+      email = req.body.userData.email;
+    }
+    // console.log(email);
     const result = await fetchUserData(email);
 
     if (!result) {
@@ -24,9 +28,9 @@ exports.updateUserProfile = async (req, res, next) => {
     res.status(201).json({ success: true });
 
     // if (!result) {
-      // res.status(404).json({ message: "Data not found" });
+    // res.status(404).json({ message: "Data not found" });
     // } else {
-      // console.log(result);
+    // console.log(result);
     // }
   } catch (error) {
     console.log(error);
@@ -47,7 +51,7 @@ const updateDataInDatabse = async (userData) => {
       .collection("accounts")
       .doc(userData.email)
       .update(userData);
-      // return "success";
+    // return "success";
   } catch (error) {
     return null;
   }
@@ -73,6 +77,10 @@ const fetchUserData = async (email) => {
     .where("email", "==", email)
     .get();
 
+  // for (let each of querySnapshot.docs)
+  // {
+  //   console.log(each.data());
+  // }
   if (!querySnapshot.empty) {
     // console.log(querySnapshot.docs[0].data());
     return querySnapshot.docs[0].data();
