@@ -23,7 +23,7 @@ exports.getUserProfile = async (req, res, next) => {
 exports.updateUserProfile = async (req, res, next) => {
   try {
     const userData = req.body.userData;
-    console.log(userData);
+    // console.log(userData);
     const result = await updateDataInDatabse(userData);
     res.status(201).json({ success: true });
 
@@ -36,6 +36,7 @@ exports.updateUserProfile = async (req, res, next) => {
     console.log(error);
   }
 };
+
 
 const updateDataInDatabse = async (userData) => {
   // console.log(userData);
