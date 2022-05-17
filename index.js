@@ -5,6 +5,9 @@ const bodyParser = require("body-parser");
 const profileRoutes = require("./routes/profile");
 const searchRoutes = require("./routes/search");
 const homeRoutes = require("./routes/home");
+const chatRoutes = require("./routes/chat");
+
+// const homeRoutes = require("./routes/Home");
 const cors = require("cors");
 
 const app = express();
@@ -18,9 +21,17 @@ app.use((req, res, next) => {
   next();
 });
 
+
+
+//
 app.use("/profile", profileRoutes);
 app.use("/search", searchRoutes);
 app.use("/home", homeRoutes);
+// app.use("/home", homeRoutes);
+app.use("/chat",chatRoutes)
+//
+
+
 app.listen(8080, () => {
   console.log("Listening on port 8080");
 });

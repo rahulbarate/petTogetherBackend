@@ -5,7 +5,7 @@ exports.getUserProfile = async (req, res, next) => {
   try {
     let email = req.body.email;
     if (!email) {
-      email = req.body.userData.email;
+      email = req.body.payload.email;
     }
     // console.log(email);
     const result = await fetchUserData(email);
@@ -23,8 +23,8 @@ exports.getUserProfile = async (req, res, next) => {
 
 exports.updateUserProfile = async (req, res, next) => {
   try {
-    const userData = req.body.userData;
-    console.log(userData);
+    const userData = req.body.payload;
+    // console.log(userData);
     const result = await updateDataInDatabse(userData);
     res.status(201).json({ success: true });
 
@@ -38,6 +38,34 @@ exports.updateUserProfile = async (req, res, next) => {
   }
 };
 
+exports.uploadPost = async (req, res, next) => {
+  try {
+    const postData = req.body.payload;
+    // console.log("data is");
+    // console.log(postData);
+    const result = await uploadPostInDatabase(postData);
+    console.log(result.id);
+    // console.log(result.data);
+    if (result.id) res.json({ success: true, postId: result.id });
+    else res.json({ success: false });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//
+// helper functions
+const uploadPostInDatabase = async (postData) => {
+  const userTypeDocString = getUserDocString(postData.userType);
+  const res = await db
+    .collection("Users")
+    .doc(userTypeDocString)
+    .collection("accounts")
+    .doc(postData.userEmail)
+    .collection("posts")
+    .add({ ...postData });
+  return res;
+};
 const updateDataInDatabse = async (userData) => {
   // console.log(userData);
   const userType =
@@ -89,3 +117,9 @@ const fetchUserData = async (email) => {
     return null;
   }
 };
+
+const getUserDocString = (userType) => {
+  if (userType === "Shopkeeper") return "shopkeeper";
+  else if (userType === "Organization") return "organization";
+  else if (userType === "Individual User") return "individualUser";
+};  
