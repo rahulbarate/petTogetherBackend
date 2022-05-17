@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 
 const profileRoutes = require("./routes/profile");
 const searchRoutes = require("./routes/search");
+const homeRoutes = require("./routes/home");
 const chatRoutes = require("./routes/chat");
 
 // const homeRoutes = require("./routes/Home");
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 //
 app.use("/profile", profileRoutes);
 app.use("/search", searchRoutes);
+app.use("/home", homeRoutes);
 // app.use("/home", homeRoutes);
 app.use("/chat",chatRoutes)
 //

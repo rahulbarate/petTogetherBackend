@@ -1,5 +1,5 @@
-const db = require("../firebase");
-
+const firebase = require("../firebase");
+const db=firebase.db;
 exports.findSearchedUsers = async (req, res) => {
   try {
     const { searchQuery } = req.params;
