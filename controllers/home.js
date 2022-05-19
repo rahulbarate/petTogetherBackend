@@ -1,8 +1,10 @@
 const firebase = require("../firebase");
-const db=firebase.db;
-const Firestore=firebase.Firestore;
+const db = firebase.db;
+const Firestore = firebase.Firestore;
+const uuid = require("uuid").v4;
 
 exports.getUserPost = async (req, res, next) => {
+  console.log("email", req.body.emailId);
   const email = req.body.emailId;
   const userType =
     req.body.userType === "Shopkeeper"
@@ -17,6 +19,7 @@ exports.getUserPost = async (req, res, next) => {
     if (!result) {
       res.status(404).json({ message: "Data not found" });
     } else {
+      // console.log(result);
       res.status(201).json(result);
     }
   } catch (error) {
@@ -32,29 +35,56 @@ const postLikeupdate = async (
   name,
   notificationType,
   profileImageLink,
-  userType
+  userType,
+  isLiked
 ) => {
-  db.collection("Users")
-    .doc(postUserType)
-    .collection("accounts")
-    .doc(postUserEmail)
-    .collection("posts")
-    .doc(postId)
-    .update({ userWhoLikedIds: [email] });
+  if (!isLiked) {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({ userWhoLikedIds: [email] });
 
-  db.collection("Users")
-    .doc(postUserType)
-    .collection("accounts")
-    .doc(postUserEmail)
-    .update({
-      notification: Firestore.FieldValue.arrayUnion({
-      "name": name, 
-      "notificationType": notificationType,
-      "postId":postId,
-      "profileImageLink":profileImageLink,
-      "userId": email,
-      "userType": userType}),
-    });
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayUnion({
+          name: name,
+          notificationType: notificationType,
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: email,
+          userType: userType,
+        }),
+      });
+  } else {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({ userWhoLikedIds: Firestore.FieldValue.arrayRemove(email) });
+
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayRemove({
+          name: name,
+          notificationType: notificationType,
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: email,
+          userType: userType,
+        }),
+      });
+  }
 };
 
 exports.setPostLike = async (req, res, next) => {
@@ -65,6 +95,8 @@ exports.setPostLike = async (req, res, next) => {
   let email = req.body.emailId;
   let userType = req.body.userType;
   let postUserEmail = req.body.postUserEmail;
+  let isLiked = req.body.isLiked;
+
   const postUserType =
     req.body.postUserType === "Shopkeeper"
       ? "shopkeeper"
@@ -80,7 +112,8 @@ exports.setPostLike = async (req, res, next) => {
       name,
       notificationType,
       profileImageLink,
-      userType
+      userType,
+      isLiked
     );
     res.status(201).json({ success: true });
   } catch (error) {
@@ -170,7 +203,7 @@ const fetchUserData = async (email, userType) => {
     .get(); //.collection("posts").get()
   const followers = userData.data().followingArray;
 
-  //console.log(followers);
+  //console.log("followers", followers);
   let returnArray = [];
 
   for (each of followers) {
@@ -181,6 +214,65 @@ const fetchUserData = async (email, userType) => {
     //console.log(posts.docs[0]);
     return null;
   } else {
+    console.log("retArray", returnArray);
     return returnArray;
+  }
+};
+
+exports.addComment = async (req, res) => {
+  console.log(req.body);
+  const {
+    postUserEmail,
+    postId,
+    profileImageLink,
+    content,
+    name,
+    commentUserEmail,
+    userType,
+  } = req.body;
+  const postUserType =
+    req.body.postUserType === "Shopkeeper"
+      ? "shopkeeper"
+      : req.body.postUserType === "Organization"
+      ? "organization"
+      : "individualUser";
+
+  let id = uuid();
+  try {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({
+        comments: Firestore.FieldValue.arrayUnion({
+          _id: id,
+          name: name,
+          commentUserId: commentUserEmail,
+          content: content,
+          profileImageLink: profileImageLink,
+          date: Date.now(),
+        }),
+      });
+
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayUnion({
+          name: name,
+          notificationType: "comment",
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: commentUserEmail,
+          userType: userType,
+        }),
+      });
+
+    return res.send(id);
+  } catch (error) {
+    console.log(error);
   }
 };

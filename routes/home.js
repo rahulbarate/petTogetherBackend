@@ -6,5 +6,7 @@ const router = express.Router();
 
 router.post('/fetchPostDetails',homeController.getUserPost);
 router.post('/setPostLike',homeController.setPostLike);
+router.post('/addComment',homeController.addComment);
+
 
 module.exports = router;
