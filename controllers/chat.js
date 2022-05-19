@@ -1,4 +1,5 @@
-const db = require("../firebase");
+const firebase = require("../firebase");
+const db=firebase.db;
 const { route } = require("../routes/search");
 
 exports.findChats = async (req, res) => {
