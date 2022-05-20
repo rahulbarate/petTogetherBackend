@@ -1,6 +1,7 @@
 const firebase = require("../firebase");
 const db = firebase.db;
 const Firestore = firebase.Firestore;
+const uuid = require("uuid").v4;
 
 exports.getUserPost = async (req, res, next) => {
   const email = req.body.emailId;
@@ -10,8 +11,7 @@ exports.getUserPost = async (req, res, next) => {
       : req.body.userType === "Organization"
       ? "organization"
       : "individualUser";
-  // console.log(email);
-  // console.log(userType);
+
   const result = await fetchUserData(email, userType);
   try {
     if (!result) {
@@ -32,16 +32,83 @@ const postLikeupdate = async (
   name,
   notificationType,
   profileImageLink,
-  userType
+  userType,
+  isLiked,
+  sendTime
 ) => {
-  db.collection("Users")
-    .doc(postUserType)
-    .collection("accounts")
-    .doc(postUserEmail)
-    .collection("posts")
-    .doc(postId)
-    .update({ userWhoLikedIds: [email] });
+  if (!isLiked) {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({ userWhoLikedIds: [email] });
 
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayUnion({
+          name: name,
+          notificationType: notificationType,
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: email,
+          userType: userType,
+          sendTime: sendTime,
+        }),
+      });
+  } else {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({ userWhoLikedIds: Firestore.FieldValue.arrayRemove(email) });
+
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayRemove({
+          name: name,
+          notificationType: notificationType,
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: email,
+          userType: userType,
+          sendTime: sendTime,
+        }),
+      });
+  }
+};
+
+exports.setNotification = async (req, res, next) => {
+  let name = req.body.name;
+  let postId = req.body.postId;
+  let profileImageLink = req.body.profileImageLink;
+  let email = req.body.emailId;
+  let userType = req.body.userType;
+  let postUserEmail = req.body.postUserEmail;
+  let sendTime = req.body.sendTime;
+  const notificationType =
+    req.body.notificationType === "petSellPost"
+      ? "petBuyRequest"
+      : req.body.notificationType === "reshelter"
+      ? "reshelterRequest"
+      : req.body.notificationType == "breedPost"
+      ? "breedRequest"
+      : "adoptionRequest";
+  const postUserType =
+    req.body.postUserType === "Shopkeeper"
+      ? "shopkeeper"
+      : req.body.postUserType === "Organization"
+      ? "organization"
+      : "individualUser";
   db.collection("Users")
     .doc(postUserType)
     .collection("accounts")
@@ -54,10 +121,10 @@ const postLikeupdate = async (
         profileImageLink: profileImageLink,
         userId: email,
         userType: userType,
+        sendTime: sendTime,
       }),
     });
 };
-
 exports.setPostLike = async (req, res, next) => {
   let name = req.body.name;
   let notificationType = req.body.notificationType;
@@ -66,6 +133,9 @@ exports.setPostLike = async (req, res, next) => {
   let email = req.body.emailId;
   let userType = req.body.userType;
   let postUserEmail = req.body.postUserEmail;
+  let isLiked = req.body.isLiked;
+
+  let sendTime = req.body.sendTime;
   const postUserType =
     req.body.postUserType === "Shopkeeper"
       ? "shopkeeper"
@@ -81,7 +151,9 @@ exports.setPostLike = async (req, res, next) => {
       name,
       notificationType,
       profileImageLink,
-      userType
+      userType,
+      isLiked,
+      sendTime
     );
     res.status(201).json({ success: true });
   } catch (error) {
@@ -97,7 +169,8 @@ const individualPost = async (element) => {
     .doc(element)
     .collection("posts")
     .get();
-  if (query == null) {
+  let userType = "individualUser";
+  if (query.docs.length == 0) {
     query = await db
       .collection("Users")
       .doc("shopkeeper")
@@ -105,7 +178,8 @@ const individualPost = async (element) => {
       .doc(element)
       .collection("posts")
       .get();
-    if (query == null) {
+    userType = "shopkeeper";
+    if (query.docs.length == 0) {
       query = await db
         .collection("Users")
         .doc("organization")
@@ -113,43 +187,24 @@ const individualPost = async (element) => {
         .doc(element)
         .collection("posts")
         .get();
+      userType = "organization";
     }
   }
-  // console.log(element);
+
   let nameQuery = await db
     .collection("Users")
-    .doc("individualUser")
+    .doc(userType)
     .collection("accounts")
     .doc(element)
     .get();
-  if (nameQuery == null) {
-    nameQuery = await db
-      .collection("Users")
-      .doc("shopkeeper")
-      .collection("accounts")
-      .doc(element)
-      .get();
-    if (nameQuery == null) {
-      nameQuery = await db
-        .collection("Users")
-        .doc("organization")
-        .collection("accounts")
-        .doc(element)
-        .get();
-    }
-  }
-  let name;
-  if ("name" in nameQuery.data()) {
-    name = nameQuery.data().name;
-  }
-  let profileImageLink;
-  if ("profileImageLink" in nameQuery.data()) {
-    profileImageLink = nameQuery.data().profileImageLink;
-  }
+
+  let name = nameQuery.data().name;
+  let profileImageLink = nameQuery.data().profileImageLink;
   let returnData = [];
   query.docs.forEach((ele) => {
     const idData = ele.id;
     const postData = ele.data();
+
     returnData = [
       ...returnData,
       {
@@ -159,36 +214,91 @@ const individualPost = async (element) => {
         profileImageLink: profileImageLink,
       },
     ];
-    // returnData.push({idData:postData});
   });
   return returnData;
 };
 
 const fetchUserData = async (email, userType) => {
-  // const querySnapshot = await db
-  //   .collectionGroup("accounts")
-  //   .where("email", "==", email)
-  //   .get();
-  let returnArray = [];
   const userData = await db
     .collection("Users")
     .doc(userType)
     .collection("accounts")
     .doc(email)
-    .get(); //.collection("posts").get()
-  if ("followingArray" in userData.data()) {
-    const followers = userData.data().followingArray;
-    for (each of followers) {
-      returnArray = [...returnArray, await individualPost(each)];
-    }
+    .get();
+  let followers =
+    userType === "individualUser"
+      ? userData.data().followingArray
+      : userData.data().followersArray;
+  let returnArray = [];
+  if (followers.length === 0) {
+    return null;
   }
 
-  //console.log(followers);
+  for (each of followers) {
+    returnArray = [...returnArray, await individualPost(each)];
+  }
 
   if (returnArray.length === 0) {
-    //console.log(posts.docs[0]);
     return null;
   } else {
+    //console.log("retArray", returnArray);
     return returnArray;
+  }
+};
+
+exports.addComment = async (req, res) => {
+  const {
+    postUserEmail,
+    postId,
+    profileImageLink,
+    content,
+    name,
+    commentUserEmail,
+    userType,
+  } = req.body;
+  const postUserType =
+    req.body.postUserType === "Shopkeeper"
+      ? "shopkeeper"
+      : req.body.postUserType === "Organization"
+      ? "organization"
+      : "individualUser";
+
+  let id = uuid();
+  try {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({
+        comments: Firestore.FieldValue.arrayUnion({
+          _id: id,
+          name: name,
+          commentUserId: commentUserEmail,
+          content: content,
+          profileImageLink: profileImageLink,
+          date: Date.now(),
+        }),
+      });
+
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayUnion({
+          name: name,
+          notificationType: "comment",
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: commentUserEmail,
+          userType: userType,
+        }),
+      });
+
+    return res.send(id);
+  } catch (error) {
+    console.log(error);
   }
 };
