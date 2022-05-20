@@ -1,5 +1,5 @@
 const firebase = require("../firebase");
-const db=firebase.db;
+const db = firebase.db;
 
 exports.getUserProfile = async (req, res, next) => {
   try {
@@ -17,7 +17,7 @@ exports.getUserProfile = async (req, res, next) => {
       res.status(201).json({ ...result });
     }
   } catch (error) {
-    console.log(error);
+    console.log("getUserProfile: " + error);
   }
 };
 
@@ -34,7 +34,7 @@ exports.updateUserProfile = async (req, res, next) => {
     // console.log(result);
     // }
   } catch (error) {
-    console.log(error);
+    console.log("updateUserProfile: " + error);
   }
 };
 
@@ -49,7 +49,7 @@ exports.uploadPost = async (req, res, next) => {
     if (result.id) res.json({ success: true, postId: result.id });
     else res.json({ success: false });
   } catch (error) {
-    console.log(error);
+    console.log("uploadPost: " + error);
   }
 };
 
@@ -101,20 +101,24 @@ const updateDataInDatabse = async (userData) => {
   // }
 };
 const fetchUserData = async (email) => {
-  const querySnapshot = await db
-    .collectionGroup("accounts")
-    .where("email", "==", email)
-    .get();
+  try {
+    const querySnapshot = await db
+      .collectionGroup("accounts")
+      .where("email", "==", email)
+      .get();
 
-  // for (let each of querySnapshot.docs)
-  // {
-  //   console.log(each.data());
-  // }
-  if (!querySnapshot.empty) {
-    // console.log(querySnapshot.docs[0].data());
-    return querySnapshot.docs[0].data();
-  } else {
-    return null;
+    // for (let each of querySnapshot.docs)
+    // {
+    //   console.log(each.data());
+    // }
+    if (!querySnapshot.empty) {
+      // console.log(querySnapshot.docs[0].data());
+      return querySnapshot.docs[0].data();
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.log("fetchUserData: " + error);
   }
 };
 
@@ -122,4 +126,4 @@ const getUserDocString = (userType) => {
   if (userType === "Shopkeeper") return "shopkeeper";
   else if (userType === "Organization") return "organization";
   else if (userType === "Individual User") return "individualUser";
-};  
+};

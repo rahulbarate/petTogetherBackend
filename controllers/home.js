@@ -43,7 +43,7 @@ const postLikeupdate = async (
       .doc(postUserEmail)
       .collection("posts")
       .doc(postId)
-      .update({ userWhoLikedIds: [email] });
+      .update({ userWhoLikedIds: Firestore.FieldValue.arrayUnion(email) });
 
     db.collection("Users")
       .doc(postUserType)
@@ -122,6 +122,7 @@ exports.setNotification = async (req, res, next) => {
         userId: email,
         userType: userType,
         sendTime: sendTime,
+        requestStatus: "waiting",
       }),
     });
 };
@@ -197,9 +198,18 @@ const individualPost = async (element) => {
     .collection("accounts")
     .doc(element)
     .get();
+  let name;
+  let profileImageLink;
+  if (nameQuery.exists) {
+    name = "name" in nameQuery.data() ? nameQuery.data().name : "";
+    // let name = nameQuery.data().name;
+    // let profileImageLink = nameQuery.data().profileImageLink;
+    profileImageLink =
+      "profileImageLink" in nameQuery.data()
+        ? nameQuery.data().profileImageLink
+        : "";
+  }
 
-  let name = nameQuery.data().name;
-  let profileImageLink = nameQuery.data().profileImageLink;
   let returnData = [];
   query.docs.forEach((ele) => {
     const idData = ele.id;
@@ -230,7 +240,7 @@ const fetchUserData = async (email, userType) => {
       ? userData.data().followingArray
       : userData.data().followersArray;
   let returnArray = [];
-  if (followers.length === 0) {
+  if (!followers) {
     return null;
   }
 
