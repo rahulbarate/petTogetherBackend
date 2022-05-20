@@ -4,7 +4,6 @@ const Firestore = firebase.Firestore;
 const uuid = require("uuid").v4;
 
 exports.getUserPost = async (req, res, next) => {
-  console.log("email", req.body.emailId);
   const email = req.body.emailId;
   const userType =
     req.body.userType === "Shopkeeper"
@@ -12,14 +11,12 @@ exports.getUserPost = async (req, res, next) => {
       : req.body.userType === "Organization"
       ? "organization"
       : "individualUser";
-  // console.log(email);
-  // console.log(userType);
+
   const result = await fetchUserData(email, userType);
   try {
     if (!result) {
       res.status(404).json({ message: "Data not found" });
     } else {
-      // console.log(result);
       res.status(201).json(result);
     }
   } catch (error) {
@@ -193,8 +190,7 @@ const individualPost = async (element) => {
       userType = "organization";
     }
   }
-  // console.log(userType);
-  // console.log(query.docs);
+
   let nameQuery = await db
     .collection("Users")
     .doc(userType)
@@ -202,14 +198,13 @@ const individualPost = async (element) => {
     .doc(element)
     .get();
 
-  // console.log(nameQuery.data());
   let name = nameQuery.data().name;
   let profileImageLink = nameQuery.data().profileImageLink;
   let returnData = [];
   query.docs.forEach((ele) => {
     const idData = ele.id;
     const postData = ele.data();
-    // console.log(ele.data());
+
     returnData = [
       ...returnData,
       {
@@ -238,22 +233,20 @@ const fetchUserData = async (email, userType) => {
   if (followers.length === 0) {
     return null;
   }
-  // console.log(followers);
+
   for (each of followers) {
     returnArray = [...returnArray, await individualPost(each)];
   }
 
   if (returnArray.length === 0) {
-    //console.log(posts.docs[0]);
     return null;
   } else {
-    console.log("retArray", returnArray);
+    //console.log("retArray", returnArray);
     return returnArray;
   }
 };
 
 exports.addComment = async (req, res) => {
-  console.log(req.body);
   const {
     postUserEmail,
     postId,
