@@ -44,7 +44,7 @@ exports.uploadPost = async (req, res, next) => {
     // console.log("data is");
     // console.log(postData);
     const result = await uploadPostInDatabase(postData);
-    console.log(result.id);
+    // console.log(result.id);
     // console.log(result.data);
     if (result.id) res.json({ success: true, postId: result.id });
     else res.json({ success: false });

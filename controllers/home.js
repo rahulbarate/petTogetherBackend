@@ -1,6 +1,6 @@
 const firebase = require("../firebase");
-const db=firebase.db;
-const Firestore=firebase.Firestore;
+const db = firebase.db;
+const Firestore = firebase.Firestore;
 
 exports.getUserPost = async (req, res, next) => {
   const email = req.body.emailId;
@@ -48,12 +48,13 @@ const postLikeupdate = async (
     .doc(postUserEmail)
     .update({
       notification: Firestore.FieldValue.arrayUnion({
-      "name": name, 
-      "notificationType": notificationType,
-      "postId":postId,
-      "profileImageLink":profileImageLink,
-      "userId": email,
-      "userType": userType}),
+        name: name,
+        notificationType: notificationType,
+        postId: postId,
+        profileImageLink: profileImageLink,
+        userId: email,
+        userType: userType,
+      }),
     });
 };
 
@@ -137,8 +138,14 @@ const individualPost = async (element) => {
         .get();
     }
   }
-  let name = nameQuery.data().name;
-  let profileImageLink = nameQuery.data().profileImageLink;
+  let name;
+  if ("name" in nameQuery.data()) {
+    name = nameQuery.data().name;
+  }
+  let profileImageLink;
+  if ("profileImageLink" in nameQuery.data()) {
+    profileImageLink = nameQuery.data().profileImageLink;
+  }
   let returnData = [];
   query.docs.forEach((ele) => {
     const idData = ele.id;
@@ -162,20 +169,21 @@ const fetchUserData = async (email, userType) => {
   //   .collectionGroup("accounts")
   //   .where("email", "==", email)
   //   .get();
+  let returnArray = [];
   const userData = await db
     .collection("Users")
     .doc(userType)
     .collection("accounts")
     .doc(email)
     .get(); //.collection("posts").get()
-  const followers = userData.data().followingArray;
+  if ("followingArray" in userData.data()) {
+    const followers = userData.data().followingArray;
+    for (each of followers) {
+      returnArray = [...returnArray, await individualPost(each)];
+    }
+  }
 
   //console.log(followers);
-  let returnArray = [];
-
-  for (each of followers) {
-    returnArray = [...returnArray, await individualPost(each)];
-  }
 
   if (returnArray.length === 0) {
     //console.log(posts.docs[0]);
