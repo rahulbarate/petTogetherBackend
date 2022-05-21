@@ -22,13 +22,14 @@ exports.findChats = async (req, res) => {
 
             const result = await fetchUserData(chatWithUserId);
 
-            chatsTobeSent.push({
-              latestMessage: doc.data().latestMessage.text,
-              createdAt: doc.data().latestMessage.createdAt.toDate(),
-              name: result.name,
-              id: result.email,
-              profileImageLink: result.profileImageLink,
-            });
+            result !== null &&
+              chatsTobeSent.push({
+                latestMessage: doc.data().latestMessage.text,
+                createdAt: doc.data().latestMessage.createdAt.toDate(),
+                name: result.name,
+                id: result.email,
+                profileImageLink: result.profileImageLink,
+              });
           }
         } else {
         }
