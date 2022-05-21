@@ -12,15 +12,15 @@ exports.getUserPost = async (req, res, next) => {
       ? "organization"
       : "individualUser";
 
-  const result = await fetchUserData(email, userType);
   try {
+    const result = await fetchUserData(email, userType);
     if (!result) {
       res.status(404).json({ message: "Data not found" });
     } else {
       res.status(201).json(result);
     }
   } catch (error) {
-    console.log(error);
+    console.log("getUserPost: " + error.message);
   }
 };
 
@@ -36,54 +36,58 @@ const postLikeupdate = async (
   isLiked,
   sendTime
 ) => {
-  if (!isLiked) {
-    db.collection("Users")
-      .doc(postUserType)
-      .collection("accounts")
-      .doc(postUserEmail)
-      .collection("posts")
-      .doc(postId)
-      .update({ userWhoLikedIds: Firestore.FieldValue.arrayUnion(email) });
+  try {
+    if (!isLiked) {
+      db.collection("Users")
+        .doc(postUserType)
+        .collection("accounts")
+        .doc(postUserEmail)
+        .collection("posts")
+        .doc(postId)
+        .update({ userWhoLikedIds: Firestore.FieldValue.arrayUnion(email) });
 
-    db.collection("Users")
-      .doc(postUserType)
-      .collection("accounts")
-      .doc(postUserEmail)
-      .update({
-        notification: Firestore.FieldValue.arrayUnion({
-          name: name,
-          notificationType: notificationType,
-          postId: postId,
-          profileImageLink: profileImageLink,
-          userId: email,
-          userType: userType,
-          sendTime: sendTime,
-        }),
-      });
-  } else {
-    db.collection("Users")
-      .doc(postUserType)
-      .collection("accounts")
-      .doc(postUserEmail)
-      .collection("posts")
-      .doc(postId)
-      .update({ userWhoLikedIds: Firestore.FieldValue.arrayRemove(email) });
+      db.collection("Users")
+        .doc(postUserType)
+        .collection("accounts")
+        .doc(postUserEmail)
+        .update({
+          notification: Firestore.FieldValue.arrayUnion({
+            name: name,
+            notificationType: notificationType,
+            postId: postId,
+            profileImageLink: profileImageLink,
+            userId: email,
+            userType: userType,
+            sendTime: sendTime,
+          }),
+        });
+    } else {
+      db.collection("Users")
+        .doc(postUserType)
+        .collection("accounts")
+        .doc(postUserEmail)
+        .collection("posts")
+        .doc(postId)
+        .update({ userWhoLikedIds: Firestore.FieldValue.arrayRemove(email) });
 
-    db.collection("Users")
-      .doc(postUserType)
-      .collection("accounts")
-      .doc(postUserEmail)
-      .update({
-        notification: Firestore.FieldValue.arrayRemove({
-          name: name,
-          notificationType: notificationType,
-          postId: postId,
-          profileImageLink: profileImageLink,
-          userId: email,
-          userType: userType,
-          sendTime: sendTime,
-        }),
-      });
+      db.collection("Users")
+        .doc(postUserType)
+        .collection("accounts")
+        .doc(postUserEmail)
+        .update({
+          notification: Firestore.FieldValue.arrayRemove({
+            name: name,
+            notificationType: notificationType,
+            postId: postId,
+            profileImageLink: profileImageLink,
+            userId: email,
+            userType: userType,
+            sendTime: sendTime,
+          }),
+        });
+    }
+  } catch (err) {
+    console.log("postLikeupdate: " + err.message);
   }
 };
 
@@ -109,22 +113,36 @@ exports.setNotification = async (req, res, next) => {
       : req.body.postUserType === "Organization"
       ? "organization"
       : "individualUser";
-  db.collection("Users")
-    .doc(postUserType)
-    .collection("accounts")
-    .doc(postUserEmail)
-    .update({
-      notification: Firestore.FieldValue.arrayUnion({
-        name: name,
-        notificationType: notificationType,
-        postId: postId,
-        profileImageLink: profileImageLink,
-        userId: email,
-        userType: userType,
-        sendTime: sendTime,
-        requestStatus: "waiting",
-      }),
-    });
+
+  try {
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .update({
+        notification: Firestore.FieldValue.arrayUnion({
+          name: name,
+          notificationType: notificationType,
+          postId: postId,
+          profileImageLink: profileImageLink,
+          userId: email,
+          userType: userType,
+          sendTime: sendTime,
+          requestStatus: "waiting",
+        }),
+      });
+
+    //adding list of interested users in that post
+    db.collection("Users")
+      .doc(postUserType)
+      .collection("accounts")
+      .doc(postUserEmail)
+      .collection("posts")
+      .doc(postId)
+      .update({ interestedUsers: Firestore.FieldValue.arrayUnion(email) });
+  } catch (err) {
+    console.log("setNotification: " + err.message);
+  }
 };
 exports.setPostLike = async (req, res, next) => {
   let name = req.body.name;
