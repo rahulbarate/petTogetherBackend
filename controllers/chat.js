@@ -13,7 +13,7 @@ exports.findChats = async (req, res) => {
       .orderBy("latestMessage.createdAt", "desc")
       .get()
       .then(async (querySnapshot) => {
-        console.log(querySnapshot.docs);
+        // console.log(querySnapshot.docs);
         if (querySnapshot.docs.length > 0) {
           for (const doc of querySnapshot.docs) {
             const chatWithUserId = doc.id
