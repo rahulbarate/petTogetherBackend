@@ -310,20 +310,22 @@ exports.addComment = async (req, res) => {
         }),
       });
 
-    db.collection("Users")
-      .doc(postUserType)
-      .collection("accounts")
-      .doc(postUserEmail)
-      .update({
-        notification: Firestore.FieldValue.arrayUnion({
-          name: name,
-          notificationType: "comment",
-          postId: postId,
-          profileImageLink: profileImageLink,
-          userId: commentUserEmail,
-          userType: userType,
-        }),
-      });
+    if (postUserEmail !== commentUserEmail) {
+      db.collection("Users")
+        .doc(postUserType)
+        .collection("accounts")
+        .doc(postUserEmail)
+        .update({
+          notification: Firestore.FieldValue.arrayUnion({
+            name: name,
+            notificationType: "comment",
+            postId: postId,
+            profileImageLink: profileImageLink,
+            userId: commentUserEmail,
+            userType: userType,
+          }),
+        });
+    }
 
     return res.send(id);
   } catch (error) {
