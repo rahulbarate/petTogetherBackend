@@ -283,6 +283,7 @@ exports.addComment = async (req, res) => {
     name,
     commentUserEmail,
     userType,
+    sendTime,
   } = req.body;
   const postUserType =
     req.body.postUserType === "Shopkeeper"
@@ -323,6 +324,7 @@ exports.addComment = async (req, res) => {
             profileImageLink: profileImageLink,
             userId: commentUserEmail,
             userType: userType,
+            sendTime,
           }),
         });
     }
